@@ -1,0 +1,69 @@
+Here's a README for your clinical workflow dashboard:
+
+🏥 Clinical Workflow Dashboard
+A lightweight, single-file clinical workflow dashboard built with HTML, Tailwind CSS, and vanilla JavaScript — no build tools, no frameworks, no dependencies beyond a CDN.
+
+📋 Overview
+This dashboard is designed to simulate a real-time hospital ward management interface. It gives clinical staff a unified view of patient queues, live vitals monitoring, pending orders, and shift-level statistics — all in one screen.
+
+✨ Features
+
+Live Clock — Real-time date and time display in the header
+Patient Queue Table — Searchable/filterable list of patients with color-coded acuity badges (Critical / High / Stable)
+Patient Detail Drawer — Click any patient row to open a slide-in panel with expanded mock data
+Vitals Monitor — Four live metric cards (Heart Rate, O2 Sat, Blood Pressure, Temperature) with sparklines that fluctuate every 4 seconds
+Task & Orders Feed — Scrollable pending orders list with checkbox completion and a "New Order" button
+Shift Summary — Canvas-drawn donut chart showing acuity distribution, plus stats for admissions, wait time, and bed availability
+Critical Alerts — Pulsing red indicators in the sidebar for urgent patient flags
+Active Nav Highlighting — Sidebar updates active state and header label on click
+
+
+🗂️ File Structure
+index.html        ← Entire app (HTML + Tailwind + JS, fully self-contained)
+README.md         ← This file
+
+🚀 Getting Started
+No installation needed. Just open the file:
+bash# Option 1 — open directly in browser
+open index.html
+
+# Option 2 — serve locally (avoids any CORS quirks)
+npx serve .
+# or
+python -m http.server 8080
+Then visit http://localhost:8080 in your browser.
+
+🛠️ Tech Stack
+LayerTechnologyMarkupHTML5StylingTailwind CSS (CDN)FontsGoogle Fonts — IBM Plex Mono + DM SansChartsCanvas API (vanilla JS)InteractivityVanilla JavaScript (ES6+)IconsInline SVGs / Unicode symbols
+
+🎨 Design System
+TokenValueUsage--color-navy#0a0f1eBackground, sidebar--color-teal#0fd4c0Accents, borders, highlights--color-alert-red#f43f5eCritical badges, alert indicatorsBody fontDM SansUI labels, headingsData fontIBM Plex MonoAll numeric values
+Acuity badges use rounded-sm (not pills) for a precise clinical aesthetic. Card borders are 1px teal at low opacity. The main area uses a subtle CSS grid-line background texture.
+
+📊 Dashboard Sections
+Patient Queue
+Displays 6 mock patients in a sortable table. Columns include room number, name, age, condition, acuity level, wait time, assigned physician, and action buttons. A search bar filters by name or condition in real time.
+Vitals Monitor
+Four metric cards update every 4 seconds with randomized fluctuation to simulate live monitoring. Each card shows the current value, a trend arrow, a status label, and a mini Canvas sparkline of recent history.
+Task & Orders Feed
+A scrollable list of pending clinical orders. Each item has a priority icon, description, patient name, timestamp, and assigned staff. Clicking the checkbox marks it complete with a strikethrough animation. The "New Order" button appends a dummy order to the list.
+Shift Summary
+A donut chart rendered via Canvas API shows the breakdown of patients by acuity. Below it, three stat pills display today's admissions, average wait time, and available beds. An upcoming discharges list shows the next three estimated discharge times.
+
+⚠️ Disclaimer
+
+This dashboard uses entirely mock/simulated data and is intended for UI demonstration and prototyping purposes only. It is not connected to any real medical system, EHR, or patient database. It must not be used in any real clinical environment.
+
+
+🔮 Potential Enhancements
+
+Connect to a real backend or FHIR-compliant API
+Add authentication and role-based views (physician vs. nurse vs. admin)
+Persist task completions to localStorage or a database
+Add WebSocket support for true real-time vitals streaming
+Build out remaining nav sections (Rounds, Notes, Discharge)
+Make the layout fully responsive for tablet use
+
+
+📄 License
+MIT — free to use, modify, and distribute.
