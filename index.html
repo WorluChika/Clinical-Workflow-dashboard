@@ -1,0 +1,503 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Clinical Workflow Dashboard</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        :root {
+            --color-navy: #0f172a;
+            --color-slate: #1e293b;
+            --color-teal: #14b8a6;
+            --color-cyan: #06b6d4;
+            --color-alert-red: #dc2626;
+            --color-amber: #f59e0b;
+            --color-green: #10b981;
+            --color-gray: #64748b;
+        }
+        body {
+            font-family: 'DM Sans', sans-serif;
+            background-color: var(--color-navy);
+            color: #e2e8f0;
+        }
+        .mono {
+            font-family: 'IBM Plex Mono', monospace;
+        }
+        .sidebar {
+            background-color: var(--color-slate);
+            border-right: 1px solid rgba(20, 184, 166, 0.2);
+        }
+        .header {
+            background-color: var(--color-slate);
+            border-bottom: 1px solid rgba(20, 184, 166, 0.2);
+        }
+        .main-grid {
+            background-image: radial-gradient(circle, rgba(20, 184, 166, 0.05) 1px, transparent 1px);
+            background-size: 20px 20px;
+        }
+        .card {
+            background-color: var(--color-slate);
+            border: 1px solid rgba(20, 184, 166, 0.3);
+        }
+        .badge-critical {
+            background-color: var(--color-alert-red);
+            color: white;
+        }
+        .badge-high {
+            background-color: var(--color-amber);
+            color: black;
+        }
+        .badge-stable {
+            background-color: var(--color-green);
+            color: white;
+        }
+        .pulse-red {
+            animation: pulse 2s infinite;
+        }
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+        .drawer {
+            transform: translateX(100%);
+            transition: transform 0.3s ease;
+        }
+        .drawer.open {
+            transform: translateX(0);
+        }
+        .sparkline {
+            width: 80px;
+            height: 30px;
+        }
+        .donut {
+            width: 120px;
+            height: 120px;
+        }
+    </style>
+</head>
+<body class="flex flex-col h-screen">
+    <!-- Header -->
+    <header class="header fixed top-0 left-0 right-0 h-16 flex items-center justify-between px-6 z-10">
+        <div class="flex items-center space-x-4">
+            <h1 class="text-xl font-semibold">St. Michael's Medical Center</h1>
+            <span id="current-time" class="mono text-sm"></span>
+        </div>
+        <div class="flex items-center space-x-4">
+            <span id="active-section" class="text-sm">Dashboard</span>
+            <span class="text-sm">Dr. Sarah Johnson</span>
+        </div>
+    </header>
+
+    <!-- Main Layout -->
+    <div class="flex flex-1 pt-16">
+        <!-- Sidebar -->
+        <aside class="sidebar w-60 fixed left-0 top-16 bottom-0 overflow-y-auto">
+            <nav class="p-4">
+                <ul class="space-y-2">
+                    <li><a href="#" class="nav-link active flex items-center space-x-3 p-3 rounded hover:bg-teal-500/20" data-section="Dashboard"><svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20"><path d="M3 4a1 1 0 011-1h12a1 1 0 011 1v2a1 1 0 01-1 1H4a1 1 0 01-1-1V4zM3 10a1 1 0 011-1h6a1 1 0 011 1v6a1 1 0 01-1 1H4a1 1 0 01-1-1v-6zM14 9a1 1 0 00-1 1v6a1 1 0 001 1h2a1 1 0 001-1v-6a1 1 0 00-1-1h-2z"></path></svg><span>Dashboard</span></a></li>
+                    <li><a href="#" class="nav-link flex items-center space-x-3 p-3 rounded hover:bg-teal-500/20" data-section="Patient Queue"><svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20"><path d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg><span>Patient Queue</span><span class="badge-critical rounded-sm px-2 py-1 text-xs ml-auto">3</span></a></li>
+                    <li><a href="#" class="nav-link flex items-center space-x-3 p-3 rounded hover:bg-teal-500/20" data-section="Rounds"><svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20"><path d="M10.394 2.08a1 1 0 00-.788 0l-7 3a1 1 0 000 1.84L5.25 8.051a.999.999 0 01.356-.257l4-1.714a1 1 0 11.788 1.84L7.667 9.088l1.94.831a1 1 0 00.787 0l7-3a1 1 0 000-1.84l-7-3zM3.31 9.397L5 10.12v4.102a8.969 8.969 0 00-1.05-.174 1 1 0 01-.89-.89 11.115 11.115 0 01.25-3.762zM9.3 16.573A9.026 9.026 0 007 14.935v-3.957l1.818.78a3 3 0 002.364 0l5.508-2.361a11.026 11.026 0 01.25 3.762 1 1 0 01-.89.89 8.968 8.968 0 00-5.35 2.524 1 1 0 01-1.4 0zM6 18a1 1 0 001-1v-2.065a8.935 8.935 0 00-2-.712V17a1 1 0 001 1z"></path></svg><span>Rounds</span></a></li>
+                    <li><a href="#" class="nav-link flex items-center space-x-3 p-3 rounded hover:bg-teal-500/20" data-section="Orders"><svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20"><path d="M9 2a1 1 0 000 2h2a1 1 0 100-2H9z"></path><path fill-rule="evenodd" d="M10 5a1 1 0 011 1v3h3a1 1 0 110 2h-3v3a1 1 0 11-2 0v-3H6a1 1 0 110-2h3V6a1 1 0 011-1zM4 4a1 1 0 00-1 1v10a1 1 0 001 1h12a1 1 0 001-1V5a1 1 0 00-1-1H4z" clip-rule="evenodd"></path></svg><span>Orders</span><span class="badge-high rounded-sm px-2 py-1 text-xs ml-auto">5</span></a></li>
+                    <li><a href="#" class="nav-link flex items-center space-x-3 p-3 rounded hover:bg-teal-500/20" data-section="Vitals"><svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20"><path d="M3 4a1 1 0 011-1h12a1 1 0 011 1v2a1 1 0 01-1 1H4a1 1 0 01-1-1V4zM3 10a1 1 0 011-1h6a1 1 0 011 1v6a1 1 0 01-1 1H4a1 1 0 01-1-1v-6zM14 9a1 1 0 00-1 1v6a1 1 0 001 1h2a1 1 0 001-1v-6a1 1 0 00-1-1h-2z"></path></svg><span>Vitals</span></a></li>
+                    <li><a href="#" class="nav-link flex items-center space-x-3 p-3 rounded hover:bg-teal-500/20" data-section="Notes"><svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20"><path d="M13 6a3 3 0 11-6 0 3 3 0 016 0zM18 8a2 2 0 11-4 0 2 2 0 014 0zM14 15a4 4 0 00-8 0v3h8v-3z"></path></svg><span>Notes</span></a></li>
+                    <li><a href="#" class="nav-link flex items-center space-x-3 p-3 rounded hover:bg-teal-500/20" data-section="Discharge"><svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"></path></svg><span>Discharge</span></a></li>
+                </ul>
+            </nav>
+            <div class="p-4 border-t border-teal-500/20">
+                <h3 class="text-sm font-semibold mb-2">Critical Alerts</h3>
+                <ul class="space-y-2">
+                    <li class="flex items-center space-x-2 pulse-red"><div class="w-2 h-2 bg-red-500 rounded-full"></div><span class="text-xs">Patient 204: Code Blue</span></li>
+                    <li class="flex items-center space-x-2 pulse-red"><div class="w-2 h-2 bg-red-500 rounded-full"></div><span class="text-xs">Patient 112: Ventilator Alarm</span></li>
+                    <li class="flex items-center space-x-2 pulse-red"><div class="w-2 h-2 bg-red-500 rounded-full"></div><span class="text-xs">Patient 305: BP Critical</span></li>
+                </ul>
+            </div>
+        </aside>
+
+        <!-- Main Content -->
+        <main class="flex-1 ml-60 main-grid p-6 overflow-y-auto">
+            <div class="grid grid-cols-2 gap-6 h-full">
+                <!-- Patient Queue -->
+                <div class="card p-4 col-span-1 row-span-1">
+                    <h2 class="text-lg font-semibold mb-4">Patient Queue</h2>
+                    <input type="text" placeholder="Search patients..." class="w-full p-2 mb-4 bg-slate-700 border border-teal-500/30 rounded text-sm" id="patient-search">
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-sm">
+                            <thead>
+                                <tr class="border-b border-teal-500/20">
+                                    <th class="text-left p-2">Room</th>
+                                    <th class="text-left p-2">Patient Name</th>
+                                    <th class="text-left p-2">Age</th>
+                                    <th class="text-left p-2">Condition</th>
+                                    <th class="text-left p-2">Acuity</th>
+                                    <th class="text-left p-2">Wait Time</th>
+                                    <th class="text-left p-2">Physician</th>
+                                    <th class="text-left p-2">Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="patient-table">
+                                <!-- Mock data will be inserted here -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- Vitals Monitor -->
+                <div class="card p-4 col-span-1 row-span-1">
+                    <h2 class="text-lg font-semibold mb-4">Vitals Monitor</h2>
+                    <div class="grid grid-cols-2 gap-4">
+                        <div class="vital-card bg-slate-700 p-4 rounded">
+                            <div class="flex items-center justify-between mb-2">
+                                <span class="text-sm">Heart Rate</span>
+                                <span id="hr-trend" class="text-lg">↑</span>
+                            </div>
+                            <div class="mono text-3xl font-bold mb-2" id="hr-value">72</div>
+                            <div class="text-xs text-green-400 mb-2">Normal</div>
+                            <canvas class="sparkline" id="hr-sparkline"></canvas>
+                        </div>
+                        <div class="vital-card bg-slate-700 p-4 rounded">
+                            <div class="flex items-center justify-between mb-2">
+                                <span class="text-sm">O2 Saturation</span>
+                                <span id="o2-trend" class="text-lg">→</span>
+                            </div>
+                            <div class="mono text-3xl font-bold mb-2" id="o2-value">98</div>
+                            <div class="text-xs text-green-400 mb-2">Normal</div>
+                            <canvas class="sparkline" id="o2-sparkline"></canvas>
+                        </div>
+                        <div class="vital-card bg-slate-700 p-4 rounded">
+                            <div class="flex items-center justify-between mb-2">
+                                <span class="text-sm">Blood Pressure</span>
+                                <span id="bp-trend" class="text-lg">↓</span>
+                            </div>
+                            <div class="mono text-3xl font-bold mb-2" id="bp-value">120/80</div>
+                            <div class="text-xs text-amber-400 mb-2">Elevated</div>
+                            <canvas class="sparkline" id="bp-sparkline"></canvas>
+                        </div>
+                        <div class="vital-card bg-slate-700 p-4 rounded">
+                            <div class="flex items-center justify-between mb-2">
+                                <span class="text-sm">Temperature</span>
+                                <span id="temp-trend" class="text-lg">↑</span>
+                            </div>
+                            <div class="mono text-3xl font-bold mb-2" id="temp-value">98.6</div>
+                            <div class="text-xs text-green-400 mb-2">Normal</div>
+                            <canvas class="sparkline" id="temp-sparkline"></canvas>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Task & Orders Feed -->
+                <div class="card p-4 col-span-1 row-span-1">
+                    <div class="flex items-center justify-between mb-4">
+                        <h2 class="text-lg font-semibold">Task & Orders Feed</h2>
+                        <button id="new-order-btn" class="bg-teal-500 text-black px-3 py-1 rounded text-sm hover:bg-teal-400">New Order</button>
+                    </div>
+                    <div class="space-y-3 max-h-64 overflow-y-auto" id="tasks-list">
+                        <!-- Mock tasks will be inserted here -->
+                    </div>
+                </div>
+
+                <!-- Shift Summary & Stats -->
+                <div class="card p-4 col-span-1 row-span-1">
+                    <h2 class="text-lg font-semibold mb-4">Shift Summary & Stats</h2>
+                    <div class="flex justify-center mb-4">
+                        <canvas class="donut" id="acuity-chart"></canvas>
+                    </div>
+                    <div class="grid grid-cols-3 gap-2 mb-4">
+                        <div class="bg-slate-700 p-3 rounded text-center">
+                            <div class="mono text-xl font-bold">12</div>
+                            <div class="text-xs">Admitted Today</div>
+                        </div>
+                        <div class="bg-slate-700 p-3 rounded text-center">
+                            <div class="mono text-xl font-bold">45m</div>
+                            <div class="text-xs">Avg Wait Time</div>
+                        </div>
+                        <div class="bg-slate-700 p-3 rounded text-center">
+                            <div class="mono text-xl font-bold">8</div>
+                            <div class="text-xs">Beds Available</div>
+                        </div>
+                    </div>
+                    <h3 class="text-sm font-semibold mb-2">Upcoming Discharges</h3>
+                    <ul class="space-y-1 text-sm" id="discharges-list">
+                        <!-- Mock discharges will be inserted here -->
+                    </ul>
+                </div>
+            </div>
+        </main>
+
+        <!-- Patient Detail Drawer -->
+        <div id="patient-drawer" class="drawer fixed right-0 top-16 bottom-0 w-80 bg-slate-800 border-l border-teal-500/30 p-6 overflow-y-auto z-20">
+            <button id="close-drawer" class="absolute top-4 right-4 text-gray-400 hover:text-white">&times;</button>
+            <h3 class="text-lg font-semibold mb-4" id="drawer-title">Patient Details</h3>
+            <div id="drawer-content">
+                <!-- Patient details will be populated here -->
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Mock data
+        const patients = [
+            { room: '101', name: 'John Doe', age: 45, condition: 'Pneumonia', acuity: 'Critical', waitTime: '2h 15m', physician: 'Dr. Smith', id: 1 },
+            { room: '102', name: 'Jane Smith', age: 32, condition: 'Appendicitis', acuity: 'High', waitTime: '1h 30m', physician: 'Dr. Johnson', id: 2 },
+            { room: '103', name: 'Bob Wilson', age: 67, condition: 'Heart Failure', acuity: 'Critical', waitTime: '45m', physician: 'Dr. Brown', id: 3 },
+            { room: '104', name: 'Alice Brown', age: 28, condition: 'Fracture', acuity: 'Stable', waitTime: '3h 20m', physician: 'Dr. Davis', id: 4 },
+            { room: '105', name: 'Charlie Green', age: 55, condition: 'Diabetes', acuity: 'High', waitTime: '1h 10m', physician: 'Dr. Miller', id: 5 },
+            { room: '106', name: 'Diana White', age: 41, condition: 'Asthma', acuity: 'Stable', waitTime: '2h 45m', physician: 'Dr. Wilson', id: 6 }
+        ];
+
+        const tasks = [
+            { priority: 'high', description: 'Administer IV antibiotics', patient: 'John Doe', time: '08:30', staff: 'Nurse A', completed: false },
+            { priority: 'medium', description: 'Check vitals', patient: 'Jane Smith', time: '09:00', staff: 'Nurse B', completed: false },
+            { priority: 'high', description: 'Prepare for surgery', patient: 'Bob Wilson', time: '09:15', staff: 'Dr. Brown', completed: false },
+            { priority: 'low', description: 'Update chart', patient: 'Alice Brown', time: '09:30', staff: 'Nurse C', completed: false },
+            { priority: 'medium', description: 'Physical therapy', patient: 'Charlie Green', time: '10:00', staff: 'PT A', completed: false },
+            { priority: 'high', description: 'Pain management', patient: 'Diana White', time: '10:15', staff: 'Nurse D', completed: false },
+            { priority: 'low', description: 'Discharge paperwork', patient: 'John Doe', time: '10:30', staff: 'Admin A', completed: false },
+            { priority: 'medium', description: 'Lab results review', patient: 'Jane Smith', time: '11:00', staff: 'Dr. Johnson', completed: false }
+        ];
+
+        const discharges = [
+            { name: 'Eve Black', time: '14:00' },
+            { name: 'Frank Gray', time: '15:30' },
+            { name: 'Grace Blue', time: '16:45' }
+        ];
+
+        // Initialize
+        document.addEventListener('DOMContentLoaded', function() {
+            updateClock();
+            setInterval(updateClock, 1000);
+            renderPatients();
+            renderTasks();
+            renderDischarges();
+            drawSparklines();
+            drawDonutChart();
+            animateVitals();
+            setInterval(fluctuateVitals, 4000);
+
+            // Event listeners
+            document.querySelectorAll('.nav-link').forEach(link => {
+                link.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    document.querySelectorAll('.nav-link').forEach(l => l.classList.remove('active'));
+                    this.classList.add('active');
+                    document.getElementById('active-section').textContent = this.dataset.section;
+                });
+            });
+
+            document.getElementById('patient-search').addEventListener('input', filterPatients);
+
+            document.getElementById('new-order-btn').addEventListener('click', addNewTask);
+
+            document.getElementById('close-drawer').addEventListener('click', closeDrawer);
+
+            document.addEventListener('click', function(e) {
+                if (e.target.classList.contains('view-patient')) {
+                    const id = parseInt(e.target.dataset.id);
+                    openPatientDrawer(id);
+                }
+            });
+
+            document.addEventListener('change', function(e) {
+                if (e.target.classList.contains('task-checkbox')) {
+                    toggleTask(e.target.dataset.index);
+                }
+            });
+        });
+
+        function updateClock() {
+            const now = new Date();
+            document.getElementById('current-time').textContent = now.toLocaleString();
+        }
+
+        function renderPatients() {
+            const tbody = document.getElementById('patient-table');
+            tbody.innerHTML = patients.map(p => `
+                <tr class="hover:bg-teal-500/10 transition-colors">
+                    <td class="p-2 mono">${p.room}</td>
+                    <td class="p-2">${p.name}</td>
+                    <td class="p-2 mono">${p.age}</td>
+                    <td class="p-2">${p.condition}</td>
+                    <td class="p-2"><span class="badge-${p.acuity.toLowerCase()} rounded-sm px-2 py-1 text-xs">${p.acuity}</span></td>
+                    <td class="p-2 mono">${p.waitTime}</td>
+                    <td class="p-2">${p.physician}</td>
+                    <td class="p-2 space-x-1">
+                        <button class="view-patient bg-teal-500 text-black px-2 py-1 rounded text-xs hover:bg-teal-400" data-id="${p.id}">View</button>
+                        <button class="bg-cyan-500 text-black px-2 py-1 rounded text-xs hover:bg-cyan-400">Assign</button>
+                    </td>
+                </tr>
+            `).join('');
+        }
+
+        function filterPatients() {
+            const query = this.value.toLowerCase();
+            const rows = document.querySelectorAll('#patient-table tr');
+            rows.forEach(row => {
+                const text = row.textContent.toLowerCase();
+                row.style.display = text.includes(query) ? '' : 'none';
+            });
+        }
+
+        function renderTasks() {
+            const list = document.getElementById('tasks-list');
+            list.innerHTML = tasks.map((t, i) => `
+                <div class="flex items-center space-x-3 p-2 rounded ${t.completed ? 'line-through text-gray-500' : ''}">
+                    <input type="checkbox" class="task-checkbox" data-index="${i}" ${t.completed ? 'checked' : ''}>
+                    <span class="w-2 h-2 rounded-full ${t.priority === 'high' ? 'bg-red-500' : t.priority === 'medium' ? 'bg-amber-500' : 'bg-green-500'}"></span>
+                    <div class="flex-1">
+                        <div class="text-sm">${t.description}</div>
+                        <div class="text-xs text-gray-400">${t.patient} • ${t.time} • ${t.staff}</div>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        function addNewTask() {
+            tasks.push({
+                priority: 'medium',
+                description: 'New lab order',
+                patient: 'New Patient',
+                time: new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}),
+                staff: 'Nurse E',
+                completed: false
+            });
+            renderTasks();
+        }
+
+        function toggleTask(index) {
+            tasks[index].completed = !tasks[index].completed;
+            renderTasks();
+        }
+
+        function renderDischarges() {
+            const list = document.getElementById('discharges-list');
+            list.innerHTML = discharges.map(d => `<li class="flex justify-between"><span>${d.name}</span><span class="mono text-xs">${d.time}</span></li>`).join('');
+        }
+
+        function openPatientDrawer(id) {
+            const patient = patients.find(p => p.id === id);
+            document.getElementById('drawer-title').textContent = `${patient.name} - Room ${patient.room}`;
+            document.getElementById('drawer-content').innerHTML = `
+                <div class="space-y-4">
+                    <div><strong>Age:</strong> <span class="mono">${patient.age}</span></div>
+                    <div><strong>Condition:</strong> ${patient.condition}</div>
+                    <div><strong>Acuity:</strong> <span class="badge-${patient.acuity.toLowerCase()} rounded-sm px-2 py-1 text-xs">${patient.acuity}</span></div>
+                    <div><strong>Wait Time:</strong> <span class="mono">${patient.waitTime}</span></div>
+                    <div><strong>Assigned Physician:</strong> ${patient.physician}</div>
+                    <div><strong>Medical History:</strong> Lorem ipsum dolor sit amet, consectetur adipiscing elit.</div>
+                    <div><strong>Current Medications:</strong> Aspirin 81mg daily, Lisinopril 10mg daily</div>
+                    <div><strong>Allergies:</strong> Penicillin, Shellfish</div>
+                </div>
+            `;
+            document.getElementById('patient-drawer').classList.add('open');
+        }
+
+        function closeDrawer() {
+            document.getElementById('patient-drawer').classList.remove('open');
+        }
+
+        function drawSparklines() {
+            const sparklines = [
+                { id: 'hr-sparkline', data: [65, 68, 70, 72, 75, 73, 72] },
+                { id: 'o2-sparkline', data: [96, 97, 98, 99, 98, 97, 98] },
+                { id: 'bp-sparkline', data: [115, 118, 120, 122, 120, 118, 120] },
+                { id: 'temp-sparkline', data: [97.8, 98.0, 98.2, 98.4, 98.6, 98.4, 98.6] }
+            ];
+
+            sparklines.forEach(spark => {
+                const canvas = document.getElementById(spark.id);
+                const ctx = canvas.getContext('2d');
+                ctx.clearRect(0, 0, canvas.width, canvas.height);
+                ctx.strokeStyle = '#14b8a6';
+                ctx.lineWidth = 2;
+                ctx.beginPath();
+                const max = Math.max(...spark.data);
+                const min = Math.min(...spark.data);
+                const range = max - min || 1;
+                spark.data.forEach((val, i) => {
+                    const x = (i / (spark.data.length - 1)) * canvas.width;
+                    const y = canvas.height - ((val - min) / range) * canvas.height;
+                    if (i === 0) ctx.moveTo(x, y);
+                    else ctx.lineTo(x, y);
+                });
+                ctx.stroke();
+            });
+        }
+
+        function drawDonutChart() {
+            const canvas = document.getElementById('acuity-chart');
+            const ctx = canvas.getContext('2d');
+            const centerX = canvas.width / 2;
+            const centerY = canvas.height / 2;
+            const radius = 40;
+            const data = [2, 2, 2]; // Critical, High, Stable
+            const colors = ['#dc2626', '#f59e0b', '#10b981'];
+            let startAngle = -Math.PI / 2;
+            data.forEach((val, i) => {
+                const sliceAngle = (val / data.reduce((a,b)=>a+b)) * 2 * Math.PI;
+                ctx.fillStyle = colors[i];
+                ctx.beginPath();
+                ctx.moveTo(centerX, centerY);
+                ctx.arc(centerX, centerY, radius, startAngle, startAngle + sliceAngle);
+                ctx.closePath();
+                ctx.fill();
+                startAngle += sliceAngle;
+            });
+            // Inner circle for donut
+            ctx.fillStyle = '#0f172a';
+            ctx.beginPath();
+            ctx.arc(centerX, centerY, 25, 0, 2 * Math.PI);
+            ctx.fill();
+        }
+
+        function animateVitals() {
+            const vitals = [
+                { id: 'hr-value', target: 72 },
+                { id: 'o2-value', target: 98 },
+                { id: 'bp-value', target: '120/80' },
+                { id: 'temp-value', target: 98.6 }
+            ];
+            vitals.forEach(vital => {
+                const el = document.getElementById(vital.id);
+                let current = 0;
+                const increment = vital.target / 50;
+                const timer = setInterval(() => {
+                    current += increment;
+                    if (current >= vital.target) {
+                        current = vital.target;
+                        clearInterval(timer);
+                    }
+                    el.textContent = typeof vital.target === 'number' ? Math.round(current) : vital.target;
+                }, 20);
+            });
+        }
+
+        function fluctuateVitals() {
+            const hr = document.getElementById('hr-value');
+            const o2 = document.getElementById('o2-value');
+            const bp = document.getElementById('bp-value');
+            const temp = document.getElementById('temp-value');
+
+            // Random fluctuations
+            hr.textContent = Math.floor(Math.random() * 10) + 65;
+            o2.textContent = Math.floor(Math.random() * 5) + 95;
+            const systolic = Math.floor(Math.random() * 20) + 110;
+            const diastolic = Math.floor(Math.random() * 10) + 70;
+            bp.textContent = `${systolic}/${diastolic}`;
+            temp.textContent = (Math.random() * 2 + 97).toFixed(1);
+
+            // Update trends randomly
+            const trends = ['↑', '↓', '→'];
+            document.getElementById('hr-trend').textContent = trends[Math.floor(Math.random() * 3)];
+            document.getElementById('o2-trend').textContent = trends[Math.floor(Math.random() * 3)];
+            document.getElementById('bp-trend').textContent = trends[Math.floor(Math.random() * 3)];
+            document.getElementById('temp-trend').textContent = trends[Math.floor(Math.random() * 3)];
+
+            // Update sparklines with new data
+            drawSparklines();
+        }
+    </script>
+</body>
+</html>
